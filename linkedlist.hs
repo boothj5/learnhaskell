@@ -2,6 +2,7 @@ import Control.Applicative
 import Control.Monad.Writer
 import Control.Monad.State
 import Data.Monoid
+import Data.Maybe
 import qualified Data.Foldable as F
   
 -- types and typeclass instances
@@ -56,12 +57,6 @@ listInsert item (Node elem (rest))
     | item <= elem = Node item (Node elem (rest))
     | item > elem  = Node elem (listInsert item rest)
 
-listInsertST :: (Ord a) => a -> State (LinkedList a) ()
-listInsertST item = State $ \list -> ((), listInsert item list)
-
-listRemoveST :: (Integral n) => n -> State (LinkedList a) ()
-listRemoveST index = State $ \list -> ((), listRemove index list)
-
 listGet :: (Integral n) => n -> LinkedList a -> Maybe a
 listGet index EmptyList          = Nothing 
 listGet 0 (Node elem _)          = Just elem
@@ -86,6 +81,19 @@ listConcatAll :: LinkedList (LinkedList a) -> LinkedList a
 listConcatAll EmptyList = EmptyList
 listConcatAll (Node list1 EmptyList) = list1
 listConcatAll (Node list1 (Node list2 rest)) = listConcatAll (Node (listConcat list1 list2) rest)
+
+listIndexOf :: (Eq a) => a -> LinkedList a -> Maybe Int
+listIndexOf _ EmptyList = Nothing
+listIndexOf item (Node n rest) 
+    | item == n = Just 0
+    | otherwise = case (listIndexOf item rest) of
+                    Nothing -> Nothing
+                    _ -> Just (1 + fromJust (listIndexOf item rest))
+
+listContains :: (Eq a) => a -> LinkedList a -> Bool
+listContains _ EmptyList = False
+listContains item (Node n rest) | item == n = True
+                                | otherwise = listContains item rest
 
 fromPrimitive :: [a] -> LinkedList a
 fromPrimitive [] = EmptyList
@@ -156,11 +164,95 @@ processLinkedList list = let
     newList3 = listInsert 'a' newList2
     in newList3
 
+listInsertST :: (Ord a) => a -> State (LinkedList a) ()
+listInsertST item = State $ \list -> ((), listInsert item list)
+
+listRemoveST :: (Integral n) => n -> State (LinkedList a) ()
+listRemoveST index = State $ \list -> ((), listRemove index list)
+
+listIndexOfST :: (Eq a) => a -> State (LinkedList a) (Maybe Int)
+listIndexOfST item = State $ \l -> ((listIndexOf item l), l)
+
+listRemoveWithResultST :: (Eq a) => a -> State (LinkedList a) (Bool)
+listRemoveWithResultST item = State $ \list -> (listContains item list, newList list)
+    where newList l = case (listIndexOf item l) of
+                        Nothing -> l
+                        _       -> listRemove (fromJust (listIndexOf item l)) l
+
 processLinkedListST :: State (LinkedList Char) ()
 processLinkedListST = do 
     listInsertST 'f' 
     listRemoveST 0 
     listInsertST 'a' 
+
+processLinkedListNoDoST :: State (LinkedList Char) ()
+processLinkedListNoDoST = 
+    (listInsertST 'f') >>
+    (listRemoveST 0) >>
+    (listInsertST 'a')
+
+chainedComputationsST :: State (LinkedList Char) ()
+chainedComputationsST = do 
+    removedE <- listRemoveWithResultST 'e' 
+    removedAorB <- if removedE 
+                        then listRemoveWithResultST 'a' 
+                        else listRemoveWithResultST 'b'
+    if removedAorB 
+       then listInsertST 'x' 
+       else listInsertST 'z'   
+
+
+chainedComputationsNoDoST :: State (LinkedList Char) ()
+chainedComputationsNoDoST =  
+    (listRemoveWithResultST 'e') >>= (\removedE -> 
+    (if removedE 
+        then listRemoveWithResultST 'a' 
+        else listRemoveWithResultST 'b') >>= (\removedAorB ->
+    (if removedAorB 
+       then listInsertST 'x' 
+       else listInsertST 'z')))   
+
+newtype MyState s a = MyState { runMyState :: s -> (a,s) }
+
+instance Monad (MyState s) where
+    return x = MyState (\s -> (x,s))
+    comp >>= function = MyState (\morestate -> 
+                                    let (value, newstate) = runMyState comp morestate
+                                        newcomp = function value
+                                    in runMyState newcomp newstate)
+
+
+listInsertMST :: (Ord a) => a -> MyState (LinkedList a) ()
+listInsertMST item = MyState $ \list -> ((), listInsert item list)
+
+listRemoveWithResultMST :: (Eq a) => a -> MyState (LinkedList a) (Bool)
+listRemoveWithResultMST item = MyState $ \list -> (listContains item list, newList list)
+    where newList l = case (listIndexOf item l) of
+                        Nothing -> l
+                        _       -> listRemove (fromJust (listIndexOf item l)) l
+
+
+anotherStatefulListThingMST :: MyState (LinkedList Char) Bool
+anotherStatefulListThingMST = do 
+    listInsertMST 'f' 
+    res <- listRemoveWithResultMST 'e' 
+    if res 
+       then listInsertMST 'a'
+       else listInsertMST 'b'
+    listRemoveWithResultMST 'o'
+    
+    
+chainedComputationsNoDoMST :: MyState (LinkedList Char) ()
+chainedComputationsNoDoMST =  
+    (listRemoveWithResultMST 'e') >>= (\removedE -> 
+    (if removedE 
+       then listRemoveWithResultMST 'a' 
+       else listRemoveWithResultMST 'b') >>= (\removedAorB ->
+    (if removedAorB 
+       then listInsertMST 'x' 
+       else listInsertMST 'z'))) 
+
+    
 
 main = do
     putStrLn "myList"
