@@ -252,7 +252,11 @@ chainedComputationsNoDoMST =
        then listInsertMST 'x' 
        else listInsertMST 'z'))) 
 
-    
+anotherStatefulComp = do
+    list1 <- get
+    listInsertST 3
+    list2 <- get
+    return (list1, list2)   
 
 main = do
     putStrLn "myList"
