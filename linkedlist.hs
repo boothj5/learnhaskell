@@ -165,16 +165,16 @@ processLinkedList list = let
     in newList3
 
 listInsertST :: (Ord a) => a -> State (LinkedList a) ()
-listInsertST item = State $ \list -> ((), listInsert item list)
+listInsertST item = state $ \list -> ((), listInsert item list)
 
 listRemoveST :: (Integral n) => n -> State (LinkedList a) ()
-listRemoveST index = State $ \list -> ((), listRemove index list)
+listRemoveST index = state $ \list -> ((), listRemove index list)
 
 listIndexOfST :: (Eq a) => a -> State (LinkedList a) (Maybe Int)
-listIndexOfST item = State $ \l -> ((listIndexOf item l), l)
+listIndexOfST item = state $ \l -> ((listIndexOf item l), l)
 
 listRemoveWithResultST :: (Eq a) => a -> State (LinkedList a) (Bool)
-listRemoveWithResultST item = State $ \list -> (listContains item list, newList list)
+listRemoveWithResultST item = state $ \list -> (listContains item list, newList list)
     where newList l = case (listIndexOf item l) of
                         Nothing -> l
                         _       -> listRemove (fromJust (listIndexOf item l)) l
