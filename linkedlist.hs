@@ -252,11 +252,15 @@ chainedComputationsNoDoMST =
        then listInsertMST 'x' 
        else listInsertMST 'z'))) 
 
+anotherStatefulComp ::  State (LinkedList Integer) ([Integer], [Integer], [Integer])
 anotherStatefulComp = do
     list1 <- get
-    listInsertST 3
+    modify (listInsert 3)
     list2 <- get
-    return (list1, list2)   
+    put EmptyList
+    modify (listInsert 10)
+    list3 <- get
+    return (toPrimitive list1, toPrimitive list2, toPrimitive list3)   
 
 main = do
     putStrLn "myList"
