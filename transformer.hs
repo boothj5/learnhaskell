@@ -1,14 +1,14 @@
 import Control.Monad.State
 import Control.Monad.Identity
 
-test1 :: State Integer (Integer, Integer)
+--test1 :: State Integer (Integer, Integer)
 test1 = do
     a <- get
     modify (+1)
     b <- get
     return (a,b)
 
-test2 :: State String (String, String)
+--test2 :: State String (String, String)
 test2 = do
     a <- get
     modify (++"1")
@@ -18,7 +18,7 @@ test2 = do
 go1 = evalState test1 0
 go2 = evalState test2 "0" 
 
-test3 :: StateT Integer (StateT String Identity) (Integer, String)
+--test3 :: StateT Integer (StateT String Identity) (Integer, String)
 test3 = do
     modify (+ 1)
     lift $ modify (++ "1")
