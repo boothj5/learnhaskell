@@ -1,0 +1,1 @@
+newtype MyState s a = MyState { runMyState :: s -> (a,s) }
