@@ -4,16 +4,21 @@ data RatNum = RatNum {
                 numerator    :: Int
                ,denominator  :: Int }
 
-newtype MixedForm w r = (Maybe Int, Maybe RatNum)
+data MixedForm = MixedForm { whole    :: Maybe Int 
+                           , rational :: Maybe RatNum }
 
 instance Show MixedForm where
-    show (Nothing, Nothing)     = 0
-    show (Nothing, Just rat)    = show (numerator rat) ++ "/" ++ show (denominator rat)
-    show (Just whole, Nothing)  = show (fromJust whole)
-    show (Just whole, Just rat) = show (fromJust whole) ++ " and " ++ show (numerator (fromJust rat)) ++ "/" ++ show (denominator (fromJust rat))
+    show mf | isNothing (whole mf) && isNothing (rational mf) = "0"
+            | isNothing (whole mf) = show (numerator (fromJust (rational mf))) ++ "/" ++ show (denominator (fromJust (rational mf)))
+            | isNothing (rational mf) = show (fromJust $ whole mf)
+            | otherwise = show (fromJust (whole mf)) 
+                ++ " and " 
+                ++ show (numerator (fromJust (rational mf))) 
+                ++ "/" ++ show (denominator (fromJust (rational mf)))
 
 instance Show RatNum where
-    show rat = show (numerator rat) ++ "/" ++ show (denominator rat)
+    show rat = show (numerator ratL) ++ "/" ++ show (denominator ratL)
+        where ratL = lowestForm rat
 
 lowestForm :: RatNum -> RatNum
 lowestForm rat = makeRat numer denom
@@ -64,11 +69,14 @@ quarter = makeRat 1 4
 fifth = makeRat 1 5
 
 
-mixedForm :: RatNum -> MixedForm
-mixedForm rat
-    | d == n = (Just 1, Nothing)
-    | d > n = (Nothing, Just $ lowestForm rat)
-    | otherwise = (Just $ quot n d, Just $ lowestForm (makeRat (mod n d) d))
+makeMixedForm :: RatNum -> MixedForm
+makeMixedForm rat
+    | d == n    = MixedForm { whole    = Just 1
+                            , rational = Nothing }
+    | d > n     = MixedForm { whole    = Nothing
+                            , rational = (Just (lowestForm rat)) }
+    | otherwise = MixedForm { whole    = (Just (quot n d))
+                            , rational = (Just (lowestForm (makeRat (mod n d) d)))  }
         where n = numerator rat
               d = denominator rat
     
