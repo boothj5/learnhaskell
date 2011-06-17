@@ -1,4 +1,16 @@
+module Rat  
+( RatNum
+, makeRat
+, makeMixedForm
+, parseRat
+, (/+)
+, (/-)
+, (/*)
+, (//)
+) where
+
 import Data.Maybe
+import Data.Char
 
 data RatNum = RatNum { 
                 numerator    :: Int
@@ -80,8 +92,19 @@ makeMixedForm rat
         where n = numerator rat
               d = denominator rat
     
-    
-    
+parseRat :: String -> RatNum
+parseRat str 
+    | length splitList /= 2 = error "Invalid rational number!!!1!"
+    | not . isDigit . head $ (splitList !! 0) = error "Invalid rational number!!!1!"
+    | not . isDigit . head $ (splitList !! 1) = error "Invalid rational number!!!1!"
+    | otherwise = makeRat (read (splitList !! 0)) (read (splitList !! 1))
+        where splitList = (splitBy ((==) '/') str)
+
+
+splitBy :: (a -> Bool) -> [a] -> [[a]]
+splitBy _ [] = []
+splitBy f list = first : splitBy f (dropWhile f rest) 
+    where (first, rest) = break f list  
     
     
     
