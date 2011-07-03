@@ -4,16 +4,25 @@ module Pair
 , second
 ) where
 
-data Pair a = Pair { getPair :: Int -> a }
+import Data.Either
 
-instance Show a => Show (Pair a) where
+data Pair a b = Pair { getPair :: Int -> [Either a b] } | Nil
+
+instance (Show a, Show b) => Show (Pair a b) where
+    show Nil = "Empty"
     show p = show (first p) ++ " and " ++ show (second p)
 
-pair :: a -> a -> Pair a
-pair x y = Pair { getPair = (\f s pick -> if pick == 1 then f else s) x y }
-                         
-first :: Pair a -> a
-first p = getPair p 1
+pick :: a -> b -> Int -> [Either a b]
+pick x y p | p == 1    = [Left x]
+           | otherwise = [Right y]
 
-second :: Pair a -> a
-second p = getPair p 2
+pair :: a -> b -> Pair a b
+pair x y = Pair { getPair = pick x y }
+                         
+first :: Pair a b -> a
+first p = head $ lefts $ getPair p 1
+
+second :: Pair a b -> b
+second p = head $ rights $ getPair p 2
+
+
