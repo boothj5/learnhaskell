@@ -4,13 +4,13 @@ data HumanPlayer = HumanPlayer { hpcards :: [Int] }
 data ComputerPlayer = ComputerPlayer { cpcards :: [Int] }
 
 class Player a where
-    getCard :: a -> Int
+    getCard' :: a -> Int
 
 instance Player HumanPlayer where
-    getCard = minimum . hpcards
+    getCard' = minimum . hpcards
 
 instance Player ComputerPlayer where
-    getCard = maximum . cpcards
+    getCard' = maximum . cpcards
 
 
 data Playable = forall a . Player a => MakePlayable a
@@ -25,5 +25,5 @@ playerList :: [Playable]
 playerList = [ pack human
              , pack computer ]
 
-f (MakePlayable a) = getCard a
+getCard (MakePlayable a) = getCard' a
 
